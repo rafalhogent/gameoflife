@@ -3,26 +3,27 @@ import "./style.css";
 // import typescriptLogo from './typescript.svg'
 // import { setupCounter } from './counter'
 
-// document.querySelector<HTMLDivElement>('#app')!.innerHTML = `
-//   <div>
-
-//   </div>
-// `
 const app = document.querySelector<HTMLDivElement>("#app");
 const info = document.querySelector<HTMLDivElement>("#info");
+const startBtn = document.querySelector<HTMLDivElement>("#startBtn");
+const stopBtn = document.querySelector<HTMLDivElement>("#stopBtn");
+const resetBtn = document.querySelector<HTMLDivElement>("#resetBtn");
 
-// setupCounter(document.querySelector<HTMLButtonElement>('#counter')!)
 
 const W = 20;
 const H = 20;
+const frame = 250;
+
+let frameInterval: number | undefined;
 let cells: Cell[] = [
-  // new Cell(5, 5),
-  // new Cell(6, 6),
-  // new Cell(5, 6),
-  // new Cell(6, 7),
-  // new Cell(8, 8),
+  new Cell(5, 5),
+  new Cell(6, 6),
+  new Cell(5, 6),
+  new Cell(6, 7),
+  new Cell(8, 8),
 ];
-let nbsToChck: Cell[] = [];
+let last: Cell[] = [];
+let gen = 0;
 
 const toggleCell = (c: any) => {
   const cds = (c.target.id as string).split("-");
@@ -40,6 +41,7 @@ const toggleCell = (c: any) => {
 const render = () => {
   if (app) {
     app.innerHTML = "";
+    info!.innerHTML = ` gen: ${gen.toString()} ,  num: ${cells.length}`;
     for (let y = 1; y <= H; y++) {
       const row = document.createElement("div");
       row.classList.add("grid-row");
@@ -50,7 +52,7 @@ const render = () => {
         cell.setAttribute("x", x.toString());
         cell.setAttribute("y", y.toString());
         cell.classList.add("grid-cell");
-        cell.innerText = `${x}-${y}`;
+        // cell.innerText = `${x}-${y}`;
         if (cells.some((c) => c.x === x && c.y === y)) {
           cell.classList.add("cell-alive");
         }
@@ -63,23 +65,28 @@ const render = () => {
 };
 
 const start = () => {
-  const cellsCp = [...cells];
-  const survivedCells = [];
-  cellsCp.forEach((cp) => {
-    const nrNbrs = getNumberNbrs(cp);
-    if (nrNbrs >= 2 && nrNbrs <= 3) {
-      survivedCells.push(cp)
-    }
-  });
+  frameInterval = setInterval(calcFrame, frame);
 };
 
-function myTimer() {
-  const d = new Date();
-  if (info) {
-    info.innerHTML = d.getTime().toString();
+function calcFrame() {
+  if (cells.length && JSON.stringify(cells) !== JSON.stringify(last)) {
+
+    last = cells;
+    gen++;
+    const cellsCp = [...cells];
+    const survivedCells: Cell[] = [];
+    const newCells: Cell[] = [];
+    cellsCp.forEach((cp) => {
+      const nrNbrs = getNumberNbrs(cp);
+      if (nrNbrs >= 2 && nrNbrs <= 3) {
+        survivedCells.push(cp);
+      }
+      getNewCellsCand(cp, newCells);
+    });
+    cells = [...survivedCells, ...newCells];
+    render();
   }
 }
-setInterval(myTimer, 1000);
 
 function getNumberNbrs(cl: Cell) {
   const nbs = cells.filter(
@@ -96,7 +103,7 @@ function getNumberNbrs(cl: Cell) {
   return nbs.length;
 }
 
-function getEmptyNbs(cl: Cell, copy: Cell[]) {
+function getNewCellsCand(cl: Cell, newClsToComp: Cell[]) {
   const nbs = [
     new Cell(cl.x - 1, cl.y - 1),
     new Cell(cl.x - 1, cl.y),
@@ -109,20 +116,28 @@ function getEmptyNbs(cl: Cell, copy: Cell[]) {
   ];
   const newNbs = nbs.filter(
     (n) =>
-      !copy.some((cp) => cp.x === n.x && cp.y === n.y) &&
-      !nbsToChck.some((cp) => cp.x === n.x && cp.y === n.y)
+      !newClsToComp.some((cp) => cp.x === n.x && cp.y === n.y) &&
+      !cells.some((cp) => cp.x === n.x && cp.y === n.y)
   );
-  const nnnbsNr = newNbs.forEach(nn => {
-    // getNumberNbrs()
-  })
+  newNbs.forEach((nn) => {
+    const numberOfNbsNewCell = getNumberNbrs(nn);
+    if (numberOfNbsNewCell === 3) newClsToComp.push(nn);
+  });
 }
 
-function removeItem<T>(arr: Array<T>, value: T): Array<T> {
-  const index = arr.indexOf(value);
-  if (index > -1) {
-    arr.splice(index, 1);
+const clear = () => {
+  if (frameInterval) {
+    clearInterval(frameInterval);
   }
-  return arr;
-}
+};
 
+startBtn!.onclick = start;
+stopBtn!.onclick = clear;
+resetBtn!.onclick = () => {
+  clear();
+  cells = [];
+  last = [];
+  gen = 0;
+  render();
+};
 render();
