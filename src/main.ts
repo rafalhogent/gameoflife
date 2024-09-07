@@ -1,7 +1,5 @@
 import Cell from "./models/point";
 import "./style.css";
-// import typescriptLogo from './typescript.svg'
-// import { setupCounter } from './counter'
 
 const app = document.querySelector<HTMLDivElement>("#app");
 const info = document.querySelector<HTMLDivElement>("#info");
@@ -52,7 +50,6 @@ const render = () => {
         cell.setAttribute("x", x.toString());
         cell.setAttribute("y", y.toString());
         cell.classList.add("grid-cell");
-        // cell.innerText = `${x}-${y}`;
         if (cells.some((c) => c.x === x && c.y === y)) {
           cell.classList.add("cell-alive");
         }
